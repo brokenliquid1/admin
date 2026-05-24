@@ -1056,12 +1056,48 @@
     }
   })();
 
+  // ── TAB-CLOSE / BROWSER-CLOSE IDLE GUARD ────────
+  // Saves last activity time to localStorage every 30s + on every user action.
+  // On page load: if gap since last activity > 30 min → force sign-out before
+  // restoring the session, so closing the tab doesn't bypass the idle timeout.
+
+  const IDLE_KEY = '_ff_last_active';
+
+  function stampActivity() {
+    localStorage.setItem(IDLE_KEY, Date.now());
+  }
+
+  // Stamp on every user interaction (same events as idle timer)
+  ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev =>
+    document.addEventListener(ev, stampActivity, { passive: true })
+  );
+
+  // Also stamp every 30 seconds while the tab is open (keeps it fresh)
+  setInterval(stampActivity, 30_000);
+
+  // When tab becomes hidden (minimised / switched away), record the exact moment
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') stampActivity();
+  });
+
   // Check existing session on load
   (async () => {
     const session = await getSession();
-    if (session) {
-      const profile = await getCurrentProfile();
-      if (profile?.is_admin) initApp(profile);
+    if (!session) return;
+
+    // If tab was closed and reopened after >30 min of inactivity → force logout
+    const last = parseInt(localStorage.getItem(IDLE_KEY) || '0', 10);
+    const gap  = Date.now() - last;
+    if (last && gap > IDLE_LIMIT) {
+      await db.auth.signOut();
+      localStorage.removeItem(IDLE_KEY);
+      return; // stays on login screen
+    }
+
+    const profile = await getCurrentProfile();
+    if (profile?.is_admin) {
+      stampActivity(); // reset the clock on fresh load
+      initApp(profile);
     }
   })();
 
