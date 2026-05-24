@@ -1698,7 +1698,89 @@
       document.getElementById('leads-converted').textContent = converted;
     } catch(e) { toast(e.message, 'error'); }
   }
+
+  // ── IDLE TIMEOUT ─────────────────────────────
+  // Auto-logout after 30 min idle. Warning at 25 min.
+  const IDLE_LIMIT   = 30 * 60 * 1000;   // 30 minutes
+  const WARN_BEFORE  =  5 * 60 * 1000;   // warn 5 min before logout
+  let idleTimer, warnTimer, warnShown = false;
+
+  function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    clearTimeout(warnTimer);
+
+    // Hide warning if it was showing
+    if (warnShown) {
+      const w = document.getElementById('idleWarning');
+      if (w) w.style.display = 'none';
+      warnShown = false;
+    }
+
+    // Only run timers when logged in
+    if (document.getElementById('app').style.display === 'none') return;
+
+    // Show warning at 25 min
+    warnTimer = setTimeout(() => {
+      warnShown = true;
+      const w = document.getElementById('idleWarning');
+      if (w) { w.style.display = 'flex'; startWarnCountdown(WARN_BEFORE / 1000); }
+    }, IDLE_LIMIT - WARN_BEFORE);
+
+    // Logout at 30 min
+    idleTimer = setTimeout(async () => {
+      await db.auth.signOut();
+      location.reload();
+    }, IDLE_LIMIT);
+  }
+
+  // Start countdown text in the warning box
+  function startWarnCountdown(seconds) {
+    const el = document.getElementById('idleCountdown');
+    if (!el) return;
+    el.textContent = seconds;
+    const iv = setInterval(() => {
+      seconds--;
+      el.textContent = seconds;
+      if (seconds <= 0) clearInterval(iv);
+    }, 1000);
+  }
+
+  // Reset on any user activity
+  ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev =>
+    document.addEventListener(ev, resetIdleTimer, { passive: true })
+  );
+
+  // Kick off after login (called from initApp)
+  const _origInitApp = initApp;
+  window.initApp = async function(profile) {
+    await _origInitApp(profile);
+    resetIdleTimer();
+  };
 </script>
+
+<!-- Idle Warning Overlay -->
+<div id="idleWarning" style="
+  display:none; position:fixed; inset:0; z-index:9000;
+  background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center;">
+  <div style="
+    background:#fff; border-radius:16px; padding:36px 40px;
+    max-width:380px; width:90%; text-align:center;
+    box-shadow:0 16px 48px rgba(0,0,0,0.2);">
+    <div style="font-size:40px; margin-bottom:12px;">⏱️</div>
+    <div style="font-size:18px; font-weight:700; color:#333; margin-bottom:8px;">Still there?</div>
+    <p style="font-size:14px; color:#888; margin-bottom:20px; line-height:1.5;">
+      You've been idle for 25 minutes.<br>
+      Logging out in <strong id="idleCountdown" style="color:#E74C3C;">300</strong> seconds.
+    </p>
+    <button onclick="resetIdleTimer()" style="
+      background:#006039; color:#fff; border:none; border-radius:8px;
+      padding:12px 28px; font-size:14px; font-weight:600; cursor:pointer;
+      width:100%;">
+      I'm still here — Keep me logged in
+    </button>
+  </div>
+</div>
 
 </body>
 </html>
