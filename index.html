@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FranchiseForest — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.104.1/dist/umd/supabase.min.js"
+          integrity="sha384-ZstPgNL30sIz6Hlxmz87Qsg817okoeAfmzXv89YLICmfsKv3pEdQKOokOL2IpVAS"
+          crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --gold:       #006039;
+      --gold-light: #007A4A;
+      --gold-pale:  #E8F5EE;
+      --orange:     #FFC857;
+      --navy:       #0D1A10;
+      --navy-soft:  #162318;
+      --navy-mid:   #1E3020;
+      --cream:      #F8F9FA;
+      --warm-grey:  #EEF5F1;
+      --text:       #333333;
+      --text-mid:   #5A6B62;
+      --text-light: #8FA498;
+      --border:     #D4E6DB;
+      --white:      #FFFFFF;
+      --green:      #2ECC71;
+      --green-pale: #E8F8F0;
+      --red:        #E74C3C;
+      --red-pale:   #FDE8E8;
+      --radius:     10px;
+      --shadow:     0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,0.12);
+      --sidebar-w:  240px;
+      --transition: 0.2s ease;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; font-family:'Inter',sans-serif; background:var(--warm-grey); color:var(--text); font-size:14px; }
+    a { color:inherit; text-decoration:none; }
+    button { font-family:inherit; cursor:pointer; border:none; background:none; }
+    ul { list-style:none; }
+
+    /* ── AUTH GATE ───────────────────────────── */
+    #authGate {
+      display:flex; align-items:center; justify-content:center;
+      min-height:100vh;
+      background:linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);
+    }
+    .auth-card {
+      background:var(--white); border-radius:16px;
+      padding:44px 40px; width:100%; max-width:400px;
+      box-shadow:var(--shadow-lg);
+    }
+    .auth-logo {
+      display:flex; align-items:center; gap:10px; margin-bottom:28px;
+    }
+    .auth-logo-mark {
+      width:36px; height:36px; flex-shrink:0;
+    }
+    .auth-logo-text {
+      font-family:'Poppins',sans-serif; font-size:18px; font-weight:700; color:var(--text);
+    }
+    .auth-logo-text span { color:var(--gold); }
+    .auth-title { font-size:20px; font-weight:700; color:var(--text); margin-bottom:4px; }
+    .auth-sub { font-size:13px; color:var(--text-light); margin-bottom:28px; }
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-size:12px; font-weight:600; color:var(--text-mid); margin-bottom:6px; }
+    .field input {
+      width:100%; padding:11px 13px;
+      border:1.5px solid var(--border); border-radius:8px;
+      font-size:14px; font-family:'Inter',sans-serif;
+      background:var(--cream); color:var(--text);
+      transition:border-color var(--transition);
+    }
+    .field input:focus { outline:none; border-color:var(--gold); }
+    .btn-auth {
+      width:100%; padding:12px; border-radius:8px;
+      background:var(--gold); color:#fff;
+      font-size:14px; font-weight:600;
+      transition:background var(--transition);
+      margin-top:4px;
+    }
+    .btn-auth:hover { background:var(--gold-light); }
+    #authError {
+      display:none; margin-top:14px; padding:10px 14px;
+      background:var(--red-pale); border:1px solid rgba(231,76,60,0.2);
+      border-radius:8px; font-size:13px; color:var(--red);
+    }
+
+    /* ── APP SHELL ───────────────────────────── */
+    #app { display:none; height:100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      position:fixed; top:0; left:0; bottom:0;
+      width:var(--sidebar-w);
+      background:var(--navy);
+      display:flex; flex-direction:column;
+      z-index:100;
+    }
+    .sidebar-logo {
+      display:flex; align-items:center; gap:10px;
+      padding:22px 20px 20px;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+    }
+    .sidebar-logo-mark {
+      width:30px; height:30px; flex-shrink:0;
+    }
+    .sidebar-logo-text {
+      font-family:'Poppins',sans-serif; font-size:14px; font-weight:700; color:#fff;
+      line-height:1.2;
+    }
+    .sidebar-logo-text small { display:block; font-size:10px; font-family:'Poppins',sans-serif; color:#A8D5BA; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; }
+    .sidebar-nav { flex:1; padding:16px 12px; display:flex; flex-direction:column; gap:2px; overflow-y:auto; }
+    .nav-item {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:8px;
+      font-size:13px; font-weight:500; color:rgba(255,255,255,0.55);
+      cursor:pointer; transition:all var(--transition);
+      border:none; background:none; width:100%; text-align:left;
+    }
+    .nav-item:hover { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.85); }
+    .nav-item.active { background:rgba(200,130,10,0.15); color:var(--gold-light); }
+    .nav-item .nav-icon { font-size:16px; width:20px; text-align:center; flex-shrink:0; }
+    .sidebar-bottom {
+      padding:12px; border-top:1px solid rgba(255,255,255,0.07);
+    }
+    .admin-badge {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:8px;
+      background:rgba(255,255,255,0.05); margin-bottom:8px;
+    }
+    .admin-avatar {
+      width:30px; height:30px; border-radius:50%;
+      background:linear-gradient(135deg,var(--gold),var(--orange));
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700; color:#fff; flex-shrink:0;
+    }
+    .admin-info { overflow:hidden; }
+    .admin-name { font-size:12px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .admin-role { font-size:10px; color:var(--gold); font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+    .btn-logout {
+      width:100%; padding:9px; border-radius:7px;
+      background:rgba(231,76,60,0.12); color:rgba(231,76,60,0.8);
+      font-size:12px; font-weight:600;
+      transition:background var(--transition);
+    }
+    .btn-logout:hover { background:rgba(231,76,60,0.22); color:var(--red); }
+
+    /* Main content */
+    .main {
+      margin-left:var(--sidebar-w);
+      min-height:100vh;
+      display:flex; flex-direction:column;
+    }
+    .topbar {
+      background:var(--white); border-bottom:1px solid var(--border);
+      padding:0 32px; height:60px;
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; z-index:50;
+    }
+    .topbar-title { font-size:16px; font-weight:700; color:var(--text); }
+    .topbar-subtitle { font-size:12px; color:var(--text-light); margin-top:1px; }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .topbar-date { font-size:12px; color:var(--text-light); }
+
+    .content { padding:28px 32px; flex:1; }
+
+    /* ── TABS ────────────────────────────────── */
+    .tab-pane { display:none; }
+    .tab-pane.active { display:block; }
+
+    /* ── STAT CARDS ──────────────────────────── */
+    .stats-grid {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:28px;
+    }
+    .stat-card {
+      background:var(--white); border:1px solid var(--border);
+      border-radius:var(--radius); padding:22px 20px;
+    }
+    .stat-card-icon {
+      width:40px; height:40px; border-radius:9px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px; margin-bottom:14px;
+    }
+    .stat-card-val {
+      font-size:26px; font-weight:700; color:var(--text); margin-bottom:3px;
+    }
+    .stat-card-label { font-size:12px; color:var(--text-light); font-weight:500; }
+    .stat-card-change { font-size:11px; margin-top:6px; font-weight:600; }
+    .stat-card-change.up { color:var(--green); }
+    .stat-card-change.warn { color:var(--orange); }
+
+    /* ── TABLES ──────────────────────────────── */
+    .card {
+      background:var(--white); border:1px solid var(--border);
+      border-radius:var(--radius); overflow:hidden; margin-bottom:24px;
+    }
+    .card-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:18px 22px; border-bottom:1px solid var(--border);
+    }
+    .card-title { font-size:15px; font-weight:700; color:var(--text); }
+    .card-subtitle { font-size:12px; color:var(--text-light); margin-top:2px; }
+    table { width:100%; border-collapse:collapse; }
+    th {
+      font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+      color:var(--text-light); padding:11px 16px; text-align:left;
+      background:var(--warm-grey); border-bottom:1px solid var(--border);
+    }
+    td {
+      padding:13px 16px; font-size:13px; color:var(--text-mid);
+      border-bottom:1px solid var(--border);
+    }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--warm-grey); }
+    .td-name { font-weight:600; color:var(--text); }
+    .td-mono { font-family:monospace; font-size:12px; }
+
+    /* Badges */
+    .badge {
+      display:inline-flex; align-items:center;
+      padding:3px 10px; border-radius:50px;
+      font-size:11px; font-weight:600;
+    }
+    .badge-green  { background:var(--green-pale); color:#1a9e52; }
+    .badge-orange { background:rgba(232,98,42,0.1); color:var(--orange); }
+    .badge-navy   { background:rgba(15,25,35,0.08); color:var(--navy); }
+    .badge-gold   { background:var(--gold-pale); color:var(--gold); }
+    .badge-red    { background:var(--red-pale); color:var(--red); }
+
+    /* Buttons */
+    .btn {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:8px 16px; border-radius:7px;
+      font-size:12px; font-weight:600;
+      transition:all var(--transition); cursor:pointer;
+    }
+    .btn-primary { background:var(--gold); color:#fff; }
+    .btn-primary:hover { background:var(--gold-light); }
+    .btn-sm { padding:5px 12px; font-size:11px; }
+    .btn-ghost { background:var(--warm-grey); color:var(--text-mid); }
+    .btn-ghost:hover { background:var(--border); color:var(--text); }
+    .btn-success { background:var(--green-pale); color:#1a9e52; }
+    .btn-success:hover { background:#d4f5e6; }
+    .btn-danger { background:var(--red-pale); color:var(--red); }
+    .btn-danger:hover { background:#fbd5d5; }
+
+    /* ── MODAL ───────────────────────────────── */
+    .modal-overlay {
+      display:none; position:fixed; inset:0; z-index:500;
+      background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);
+      align-items:center; justify-content:center; padding:20px;
+    }
+    .modal-overlay.open { display:flex; }
+    .modal {
+      background:var(--white); border-radius:14px;
+      padding:32px; width:100%; max-width:480px;
+      position:relative; animation:slideUp 0.25s ease;
+    }
+    @keyframes slideUp {
+      from { opacity:0; transform:translateY(16px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .modal-close {
+      position:absolute; top:14px; right:14px;
+      width:28px; height:28px; border-radius:50%;
+      background:var(--warm-grey); font-size:14px;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--text-mid); cursor:pointer;
+    }
+    .modal-close:hover { background:var(--border); }
+    .modal-title { font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px; }
+    .modal-sub { font-size:13px; color:var(--text-light); margin-bottom:22px; }
+    .modal-field { margin-bottom:14px; }
+    .modal-field label { display:block; font-size:12px; font-weight:600; color:var(--text-mid); margin-bottom:5px; }
+    .modal-field input, .modal-field select, .modal-field textarea {
+      width:100%; padding:10px 12px;
+      border:1.5px solid var(--border); border-radius:7px;
+      font-size:13px; font-family:'Inter',sans-serif;
+      background:var(--cream); color:var(--text);
+      transition:border-color var(--transition);
+    }
+    .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus {
+      outline:none; border-color:var(--gold);
+    }
+    .modal-actions { display:flex; gap:10px; margin-top:20px; }
+    .modal-actions .btn { flex:1; justify-content:center; padding:11px; }
+
+    /* ── TOAST ───────────────────────────────── */
+    #toast {
+      position:fixed; bottom:24px; right:24px; z-index:9999;
+      background:var(--navy); color:#fff;
+      padding:12px 20px; border-radius:9px;
+      font-size:13px; font-weight:500;
+      box-shadow:var(--shadow-lg);
+      transform:translateY(80px); opacity:0;
+      transition:all 0.3s ease;
+    }
+    #toast.show { transform:translateY(0); opacity:1; }
+    #toast.success { background:#1a9e52; }
+    #toast.error   { background:var(--red); }
+
+    /* ── EMPTY STATE ─────────────────────────── */
+    .empty-state {
+      text-align:center; padding:48px 24px;
+      color:var(--text-light);
+    }
+    .empty-state .empty-icon { font-size:40px; margin-bottom:12px; }
+    .empty-state p { font-size:14px; }
+
+    /* ── SEARCH ──────────────────────────────── */
+    .search-input {
+      padding:8px 14px; border:1.5px solid var(--border); border-radius:7px;
+      font-size:13px; font-family:'Inter',sans-serif;
+      background:var(--warm-grey); color:var(--text); width:220px;
+    }
+    .search-input:focus { outline:none; border-color:var(--gold); background:#fff; }
+
+    /* ── DETAIL PANEL ────────────────────────── */
+    .detail-panel {
+      display:none; position:fixed; top:0; right:0; bottom:0;
+      width:420px; background:var(--white);
+      border-left:1px solid var(--border);
+      z-index:200; overflow-y:auto;
+      box-shadow:-8px 0 32px rgba(0,0,0,0.1);
+      animation:slideLeft 0.25s ease;
+    }
+    @keyframes slideLeft {
+      from { transform:translateX(40px); opacity:0; }
+      to   { transform:translateX(0); opacity:1; }
+    }
+    .detail-panel.open { display:block; }
+    .detail-header {
+      padding:22px 24px; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+      position:sticky; top:0; background:var(--white); z-index:10;
+    }
+    .detail-title { font-size:16px; font-weight:700; color:var(--text); }
+    .detail-body { padding:24px; }
+    .detail-row { margin-bottom:16px; }
+    .detail-row label { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-light); margin-bottom:4px; display:block; }
+    .detail-row span { font-size:14px; color:var(--text); font-weight:500; }
+    .detail-divider { border:none; border-top:1px solid var(--border); margin:18px 0; }
+
+    /* Spinner */
+    .spinner {
+      display:inline-block; width:16px; height:16px;
+      border:2px solid rgba(255,255,255,0.3);
+      border-top-color:#fff; border-radius:50%;
+      animation:spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Loading state */
+    .loading-row td { text-align:center; padding:32px; color:var(--text-light); }
+
+    /* ── RESPONSIVE ──────────────────────────── */
+    @media (max-width: 1024px) {
+      .stats-grid { grid-template-columns:repeat(2,1fr); }
+    }
+    @media (max-width: 768px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { display:none; }
+      .content { padding:20px 16px; }
+      .topbar { padding:0 16px; }
+      .stats-grid { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ AUTH GATE ═══ -->
+<div id="authGate">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg class="auth-logo-mark" width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <rect width="36" height="36" rx="8" fill="#006039"/>
+        <path d="M18 7L25 17H21L25.5 24H20V29H16V24H10.5L15 17H11L18 7Z" fill="#FFC857"/>
+      </svg>
+      <span class="auth-logo-text">Franchise<span>Forest</span></span>
+    </div>
+    <div class="auth-title">Admin Sign In</div>
+    <p class="auth-sub">Access restricted to authorised administrators only.</p>
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="admin@franchiseforest.in">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••">
+    </div>
+    <button class="btn-auth" id="loginBtn" onclick="doLogin()">Sign In to Admin Panel</button>
+    <div id="authError">Incorrect credentials or insufficient permissions.</div>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ═══ -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg class="sidebar-logo-mark" width="30" height="30" viewBox="0 0 36 36" fill="none">
+        <rect width="36" height="36" rx="8" fill="#007A4A"/>
+        <path d="M18 7L25 17H21L25.5 24H20V29H16V24H10.5L15 17H11L18 7Z" fill="#FFC857"/>
+      </svg>
+      <div class="sidebar-logo-text">
+        FranchiseForest
+        <small>Admin Panel</small>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="switchTab('dashboard', this)">
+        <span class="nav-icon">📊</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="switchTab('investors', this)">
+        <span class="nav-icon">👥</span> Investors
+      </button>
+      <button class="nav-item" onclick="switchTab('investments', this)">
+        <span class="nav-icon">💼</span> Investments
+      </button>
+      <button class="nav-item" onclick="switchTab('payouts', this)">
+        <span class="nav-icon">💰</span> Payouts
+      </button>
+      <button class="nav-item" onclick="switchTab('units', this)">
+        <span class="nav-icon">🏪</span> Units
+      </button>
+      <button class="nav-item" onclick="switchTab('channelpartners', this)">
+        <span class="nav-icon">🤝</span> Channel Partners
+      </button>
+      <button class="nav-item" onclick="switchTab('leads', this)">
+        <span class="nav-icon">📋</span> Invest Leads
+      </button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="admin-badge">
+        <div class="admin-avatar" id="adminAvatar">A</div>
+        <div class="admin-info">
+          <div class="admin-name" id="adminName">Admin</div>
+          <div class="admin-role">Administrator</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+        <div class="topbar-subtitle" id="topbarSub">Overview of all activity</div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-date" id="todayDate"></span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD TAB ── -->
+      <div class="tab-pane active" id="tab-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--gold-pale);">👥</div>
+            <div class="stat-card-val" id="s-investors">—</div>
+            <div class="stat-card-label">Total Investors</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:rgba(46,204,113,0.1);">💼</div>
+            <div class="stat-card-val" id="s-raised">—</div>
+            <div class="stat-card-label">Total Capital Raised</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:rgba(46,204,113,0.1);">✅</div>
+            <div class="stat-card-val" id="s-paidout">—</div>
+            <div class="stat-card-label">Total Paid Out</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:rgba(232,98,42,0.1);">⏳</div>
+            <div class="stat-card-val" id="s-pending">—</div>
+            <div class="stat-card-label">Pending Payouts</div>
+            <div class="stat-card-change warn" id="s-pending-count"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Recent Investments</div>
+              <div class="card-subtitle">Latest investor activity</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="switchTab('investments', document.querySelector('.nav-item:nth-child(3)'))">View All</button>
+          </div>
+          <table id="recentInvestmentsTable">
+            <thead>
+              <tr>
+                <th>Investor</th>
+                <th>Unit</th>
+                <th>Plan</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="recentInvestmentsBody">
+              <tr class="loading-row"><td colspan="6">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── INVESTORS TAB ── -->
+      <div class="tab-pane" id="tab-investors">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">All Investors</div>
+              <div class="card-subtitle">Click a row to view full profile</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <input type="text" class="search-input" placeholder="Search name / phone..." oninput="filterInvestors(this.value)">
+              <button class="btn btn-primary btn-sm" onclick="openModal('addInvestorModal')">+ Add Investor</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>City</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="investorsBody">
+              <tr class="loading-row"><td colspan="5">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── INVESTMENTS TAB ── -->
+      <div class="tab-pane" id="tab-investments">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">All Investments</div>
+              <div class="card-subtitle">Every active and past investment</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('addInvestmentModal')">+ Add Investment</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Investor</th>
+                <th>Unit</th>
+                <th>Plan</th>
+                <th>Amount</th>
+                <th>Units</th>
+                <th>Start Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="investmentsBody">
+              <tr class="loading-row"><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── PAYOUTS TAB ── -->
+      <div class="tab-pane" id="tab-payouts">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Payouts</div>
+              <div class="card-subtitle">Quarterly payouts — add new or mark as paid</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('addPayoutModal')">+ Add Payout</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Investor</th>
+                <th>Unit</th>
+                <th>Quarter</th>
+                <th>Year</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="payoutsBody">
+              <tr class="loading-row"><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── UNITS TAB ── -->
+      <div class="tab-pane" id="tab-units">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Units</div>
+              <div class="card-subtitle">Manage kiosks and store locations</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('addUnitModal')">+ Add Unit</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Type</th>
+                <th>EBITDA / Quarter</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="unitsBody">
+              <tr class="loading-row"><td colspan="5">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── CHANNEL PARTNERS TAB ── -->
+      <div class="tab-pane" id="tab-channelpartners">
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--gold-pale);">🤝</div>
+            <div class="stat-card-val" id="cp-total">—</div>
+            <div class="stat-card-label">Total Channel Partners</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:rgba(46,204,113,0.1);">✅</div>
+            <div class="stat-card-val" id="cp-paid">—</div>
+            <div class="stat-card-label">Commissions Paid</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:rgba(232,98,42,0.1);">⏳</div>
+            <div class="stat-card-val" id="cp-pending">—</div>
+            <div class="stat-card-label">Pending Commissions</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">All Channel Partners</div>
+              <div class="card-subtitle">Click a row to view profile and referral network</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <input type="text" class="search-input" placeholder="Search name / ID..." oninput="filterCPs(this.value)">
+              <button class="btn btn-primary btn-sm" onclick="openModal('addCPModal')">+ Add CP</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Consultant ID</th>
+                <th>Rank</th>
+                <th>Referred By</th>
+                <th>Joined</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cpBody">
+              <tr class="loading-row"><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">CP Commissions</div>
+              <div class="card-subtitle">Direct and passive income records — add new or mark paid</div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openModal('addCPCommissionModal')">+ Add Commission</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Channel Partner</th>
+                <th>Type</th>
+                <th>Sale Amount</th>
+                <th>Commission</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cpCommissionsBody">
+              <tr class="loading-row"><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="tab-leads">
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:var(--gold-pale);">📋</div>
+            <div class="stat-card-val" id="leads-total">—</div>
+            <div class="stat-card-label">Total Leads</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:rgba(232,98,42,0.1);">🆕</div>
+            <div class="stat-card-val" id="leads-new">—</div>
+            <div class="stat-card-label">New</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:rgba(200,130,10,0.1);">📞</div>
+            <div class="stat-card-val" id="leads-contacted">—</div>
+            <div class="stat-card-label">Contacted</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon" style="background:rgba(46,204,113,0.1);">✅</div>
+            <div class="stat-card-val" id="leads-converted">—</div>
+            <div class="stat-card-label">Converted</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">All Investment Enquiries</div>
+              <div class="card-subtitle">Submitted via the Invest Now form on the public website</div>
+            </div>
+            <input type="text" class="search-input" placeholder="Search name / phone…" oninput="filterLeads(this.value)">
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Interested In</th>
+                <th>City</th>
+                <th>Status</th>
+                <th>Submitted</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="leadsBody">
+              <tr class="loading-row"><td colspan="8">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══ DETAIL PANEL ═══ -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-header">
+    <span class="detail-title" id="detailTitle">Investor Profile</span>
+    <button class="modal-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Add Investor -->
+<div class="modal-overlay" id="addInvestorModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addInvestorModal')">✕</button>
+    <div class="modal-title">Add Investor</div>
+    <p class="modal-sub">Creates a new investor account.</p>
+    <div class="modal-field"><label>Full Name</label><input type="text" id="inv-name" placeholder="Rahul Mehta"></div>
+    <div class="modal-field"><label>Email</label><input type="email" id="inv-email" placeholder="rahul@email.com"></div>
+    <div class="modal-field"><label>Password (temporary)</label><input type="password" id="inv-pass" placeholder="Min 6 characters"></div>
+    <div class="modal-field"><label>Phone</label><input type="tel" id="inv-phone" placeholder="+91 98765 43210"></div>
+    <div class="modal-field"><label>City</label><input type="text" id="inv-city" placeholder="Noida"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addInvestorModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addInvestor()">Create Investor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Investment -->
+<div class="modal-overlay" id="addInvestmentModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addInvestmentModal')">✕</button>
+    <div class="modal-title">Add Investment</div>
+    <p class="modal-sub">Link an investor to a unit with investment details.</p>
+    <div class="modal-field"><label>Investor</label><select id="inv-select"></select></div>
+    <div class="modal-field"><label>Unit</label><select id="unit-select"></select></div>
+    <div class="modal-field"><label>Plan</label>
+      <select id="plan-select">
+        <option value="A">Plan A — 50% EBITDA (post recovery)</option>
+        <option value="B">Plan B — 15% Fixed + Bonus</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Investment Amount (₹)</label><input type="number" id="inv-amount" placeholder="1100000"></div>
+    <div class="modal-field"><label>Number of Units</label>
+      <select id="inv-units-count">
+        <option value="1">1</option><option value="2">2</option>
+        <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Start Date</label><input type="date" id="inv-start"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addInvestmentModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addInvestment()">Save Investment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Payout -->
+<div class="modal-overlay" id="addPayoutModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addPayoutModal')">✕</button>
+    <div class="modal-title">Add Payout</div>
+    <p class="modal-sub">Record a quarterly payout for an investment.</p>
+    <div class="modal-field"><label>Investment</label><select id="payout-investment-select"></select></div>
+    <div class="modal-field"><label>Quarter</label>
+      <select id="payout-quarter">
+        <option value="1">Q1 (Jan–Mar)</option><option value="2">Q2 (Apr–Jun)</option>
+        <option value="3">Q3 (Jul–Sep)</option><option value="4">Q4 (Oct–Dec)</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Year</label><input type="number" id="payout-year" placeholder="2025"></div>
+    <div class="modal-field"><label>Amount (₹)</label><input type="number" id="payout-amount" placeholder="137500"></div>
+    <div class="modal-field"><label>Note (optional)</label><input type="text" id="payout-note" placeholder="Q1 2025 payout — Noida store"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addPayoutModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addPayout()">Save Payout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Unit -->
+<div class="modal-overlay" id="addUnitModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addUnitModal')">✕</button>
+    <div class="modal-title">Add Unit</div>
+    <p class="modal-sub">Add a new kiosk or store location.</p>
+    <div class="modal-field"><label>Unit Name</label><input type="text" id="unit-name" placeholder="Sector 18 Store"></div>
+    <div class="modal-field"><label>Location</label><input type="text" id="unit-location" placeholder="Noida Sector 18"></div>
+    <div class="modal-field"><label>Type</label>
+      <select id="unit-type"><option value="store">Store</option><option value="kiosk">Kiosk</option></select>
+    </div>
+    <div class="modal-field"><label>EBITDA / Quarter (₹)</label><input type="number" id="unit-ebitda" placeholder="275000"></div>
+    <div class="modal-field"><label>Status</label>
+      <select id="unit-status">
+        <option value="active">Active</option>
+        <option value="upcoming">Upcoming</option>
+        <option value="closed">Closed</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addUnitModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addUnit()">Save Unit</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Channel Partner -->
+<div class="modal-overlay" id="addCPModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addCPModal')">✕</button>
+    <div class="modal-title">Add Channel Partner</div>
+    <p class="modal-sub">Register an existing user account as a Channel Partner.</p>
+    <div class="modal-field"><label>User Account</label><select id="cp-profile-select"></select></div>
+    <div class="modal-field"><label>Consultant ID</label><input type="text" id="cp-consultant-id" placeholder="BW-2025-001"></div>
+    <div class="modal-field"><label>Referred By (optional)</label><select id="cp-referrer-select"></select></div>
+    <div class="modal-field"><label>Initial Rank</label>
+      <select id="cp-rank-select">
+        <option value="channel_partner">Channel Partner</option>
+        <option value="manager">Manager</option>
+        <option value="senior_manager">Senior Manager</option>
+        <option value="bdo">BDO</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addCPModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addCP()">Add Channel Partner</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add CP Commission -->
+<div class="modal-overlay" id="addCPCommissionModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addCPCommissionModal')">✕</button>
+    <div class="modal-title">Add Commission</div>
+    <p class="modal-sub">Record a direct or passive commission entry for a CP.</p>
+    <div class="modal-field"><label>Channel Partner</label><select id="cp-comm-cp-select"></select></div>
+    <div class="modal-field"><label>Type</label>
+      <select id="cp-comm-type" onchange="suggestCommission()">
+        <option value="direct">Direct Sale (3–4%)</option>
+        <option value="l1_passive">L1 Passive (0.75%)</option>
+        <option value="l2_passive">L2 Passive (0.50%)</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Sale Amount (₹)</label><input type="number" id="cp-comm-sale" placeholder="1000000" oninput="suggestCommission()"></div>
+    <div class="modal-field"><label>Commission Amount (₹)</label><input type="number" id="cp-comm-amount" placeholder="auto-calculated"></div>
+    <div class="modal-field"><label>Note (optional)</label><input type="text" id="cp-comm-note" placeholder="Unit sale — Sector 18"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addCPCommissionModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addCPCommission()">Save Commission</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ═══ JS ═══ -->
+<script src="/config.js"></script>
+<script src="js/supabase.js"></script>
+<script>
+  // ── Topbar date ──────────────────────────────
+  document.getElementById('todayDate').textContent =
+    new Date().toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+
+  // ── Tab titles ───────────────────────────────
+  const tabMeta = {
+    dashboard:       { title:'Dashboard',        sub:'Overview of all activity' },
+    investors:       { title:'Investors',        sub:'All registered investors' },
+    investments:     { title:'Investments',      sub:'All active & past investments' },
+    payouts:         { title:'Payouts',          sub:'Quarterly payout management' },
+    units:           { title:'Units',            sub:'Kiosk & store locations' },
+    channelpartners: { title:'Channel Partners', sub:'CP network, ranks & commissions' },
+    leads:           { title:'Invest Leads',     sub:'Enquiries from the Invest Now form' }
+  };
+
+  // ── Admin lockout — Supabase-backed, permanent ───────────────────────────
+  // Lock state lives in the Supabase `admin_lockout` table.
+  // Clearing browser storage does NOT bypass this — the DB is the source of truth.
+  //
+  // TO UNLOCK:
+  //   Supabase dashboard → Table Editor → admin_lockout
+  //   Find the row → set locked = false, attempts = 0 → Save
+
+  async function _checkLockout(email) {
+    if (!email) return false;
+    const { data } = await db
+      .from('admin_lockout')
+      .select('locked')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+    return data?.locked === true;
+  }
+
+  async function _recordFail(email) {
+    const { data } = await db.rpc('record_failed_login', { p_email: email.toLowerCase() });
+    return data || { attempts: 0, locked: false };
+  }
+
+  function _showPermanentLock() {
+    const err = document.getElementById('authError');
+    const btn = document.getElementById('loginBtn');
+    document.getElementById('loginEmail').disabled    = true;
+    document.getElementById('loginPassword').disabled = true;
+    err.style.display    = 'block';
+    err.style.background = 'rgba(231,76,60,0.12)';
+    err.style.border     = '1px solid rgba(231,76,60,0.35)';
+    err.style.color      = '#c0392b';
+    err.style.padding    = '14px 16px';
+    err.style.lineHeight = '1.5';
+    err.innerHTML = '<b>🔒 Account Locked</b><br>Too many failed login attempts. Contact the administrator to restore access.';
+    btn.disabled         = true;
+    btn.textContent      = '🔒 Locked';
+    btn.style.background = '#c0392b';
+    btn.style.opacity    = '1';
+    // Cache so lock shows instantly on next page load without an extra DB call
+    localStorage.setItem('_bw_le', document.getElementById('loginEmail').value.trim().toLowerCase());
+  }
+
+  // ── Auth ─────────────────────────────────────
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const pass  = document.getElementById('loginPassword').value;
+    const btn   = document.getElementById('loginBtn');
+    const err   = document.getElementById('authError');
+
+    if (!email || !pass) {
+      err.style.display = 'block';
+      err.textContent   = 'Please enter your email and password.';
+      return;
+    }
+
+    err.style.display = 'none';
+    btn.innerHTML = '<span class="spinner"></span>';
+    btn.disabled  = true;
+
+    // Check Supabase lockout before even trying credentials
+    if (await _checkLockout(email)) {
+      _showPermanentLock();
+      return;
+    }
+
+    try {
+      await signIn(email, pass);
+      const profile = await getCurrentProfile();
+      if (!profile?.is_admin) {
+        await db.auth.signOut();
+        throw new Error('Not an admin');
+      }
+      initApp(profile);
+    } catch(e) {
+      const result    = await _recordFail(email);
+      const remaining = Math.max(0, 2 - result.attempts);
+
+      if (result.locked) {
+        _showPermanentLock();
+      } else {
+        err.style.display = 'block';
+        // Generic message — never reveal whether email exists, wrong password, or not-admin
+        err.textContent   = remaining > 0
+          ? `Invalid credentials or insufficient permissions. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before permanent lockout.`
+          : 'Invalid credentials or insufficient permissions.';
+        btn.textContent = 'Sign In to Admin Panel';
+        btn.disabled    = false;
+      }
+    }
+  }
+
+  document.getElementById('loginPassword').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  async function doLogout() {
+    await db.auth.signOut();
+    location.reload();
+  }
+
+  // ── Init app ─────────────────────────────────
+  async function initApp(profile) {
+    document.getElementById('authGate').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('adminName').textContent = profile.full_name || profile.email;
+    document.getElementById('adminAvatar').textContent = (profile.full_name || 'A')[0].toUpperCase();
+    loadDashboard();
+  }
+
+  // On page load: if we cached a locked email, verify with Supabase and show lock immediately
+  (async function() {
+    const cached = localStorage.getItem('_bw_le');
+    if (cached) {
+      document.getElementById('loginEmail').value = cached;
+      if (await _checkLockout(cached)) _showPermanentLock();
+    }
+  })();
+
+  // Check existing session on load
+  (async () => {
+    const session = await getSession();
+    if (session) {
+      const profile = await getCurrentProfile();
+      if (profile?.is_admin) initApp(profile);
+    }
+  })();
+
+  // ── Tab switching ────────────────────────────
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    if (el) el.classList.add('active');
+    document.getElementById('topbarTitle').textContent = tabMeta[name].title;
+    document.getElementById('topbarSub').textContent   = tabMeta[name].sub;
+    closeDetail();
+    if (name === 'dashboard')       loadDashboard();
+    if (name === 'investors')       loadInvestors();
+    if (name === 'investments')     loadInvestments();
+    if (name === 'payouts')         loadPayouts();
+    if (name === 'units')           loadUnits();
+    if (name === 'channelpartners') loadChannelPartners();
+    if (name === 'leads')           loadLeads();
+  }
+
+  // ── Modal helpers ────────────────────────────
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    if (id === 'addInvestmentModal')    populateInvestmentDropdowns();
+    if (id === 'addPayoutModal')        populatePayoutDropdowns();
+    if (id === 'addCPModal')            populateCPModals();
+    if (id === 'addCPCommissionModal')  populateCPCommissionModal();
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+  document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+  });
+
+  // ── Detail panel ─────────────────────────────
+  function showDetail(title, html) {
+    document.getElementById('detailTitle').textContent = title;
+    document.getElementById('detailBody').innerHTML    = html;
+    document.getElementById('detailPanel').classList.add('open');
+  }
+  function closeDetail() {
+    document.getElementById('detailPanel').classList.remove('open');
+  }
+
+  // ── Toast ────────────────────────────────────
+  function toast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show ' + type;
+    setTimeout(() => { t.className = ''; }, 3000);
+  }
+
+  // ── Format helpers ───────────────────────────
+  function fmt(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
+  function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '—'; }
+  function esc(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;'); }
+
+  // ── DASHBOARD ────────────────────────────────
+  async function loadDashboard() {
+    try {
+      const stats = await adminGetDashboardStats();
+      document.getElementById('s-investors').textContent = stats.totalInvestors || 0;
+      document.getElementById('s-raised').textContent    = fmt(stats.totalRaised);
+      document.getElementById('s-paidout').textContent   = fmt(stats.totalPaidOut);
+      document.getElementById('s-pending').textContent   = fmt(stats.pendingPayouts);
+    } catch(e) { console.error(e); }
+
+    try {
+      const investments = await adminGetAllInvestments();
+      const tbody = document.getElementById('recentInvestmentsBody');
+      const recent = investments.slice(0, 8);
+      if (!recent.length) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="6">No investments yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = recent.map(i => `
+        <tr>
+          <td class="td-name">${esc(i.profiles?.full_name) || '—'}</td>
+          <td>${esc(i.units?.name) || '—'}</td>
+          <td><span class="badge badge-gold">Plan ${esc(i.plan)}</span></td>
+          <td class="td-mono">${fmt(i.amount)}</td>
+          <td>${fmtDate(i.start_date)}</td>
+          <td><span class="badge ${i.status==='active'?'badge-green':'badge-navy'}">${esc(i.status)}</span></td>
+        </tr>`).join('');
+    } catch(e) { console.error(e); }
+  }
+
+  // ── INVESTORS ────────────────────────────────
+  let allInvestors = [];
+  async function loadInvestors() {
+    const tbody = document.getElementById('investorsBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Loading...</td></tr>';
+    try {
+      allInvestors = await adminGetAllInvestors();
+      renderInvestors(allInvestors);
+    } catch(e) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Error loading investors.</td></tr>';
+    }
+  }
+
+  function renderInvestors(list) {
+    const tbody = document.getElementById('investorsBody');
+    if (!list.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="5">No investors found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(inv => `
+      <tr style="cursor:pointer;" onclick="showInvestorDetail('${esc(inv.id)}')">
+        <td class="td-name">${esc(inv.full_name) || '—'}</td>
+        <td>${esc(inv.phone) || '—'}</td>
+        <td>${esc(inv.city) || '—'}</td>
+        <td>${fmtDate(inv.created_at)}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showInvestorDetail('${esc(inv.id)}')">View →</button></td>
+      </tr>`).join('');
+  }
+
+  function filterInvestors(q) {
+    const filtered = allInvestors.filter(i =>
+      (i.full_name||'').toLowerCase().includes(q.toLowerCase()) ||
+      (i.phone||'').includes(q)
+    );
+    renderInvestors(filtered);
+  }
+
+  async function showInvestorDetail(id) {
+    const inv = allInvestors.find(i => i.id === id);
+    if (!inv) return;
+
+    // Load their investments
+    const { data: investments } = await db
+      .from('investments')
+      .select('*, units(name, location, type)')
+      .eq('investor_id', id);
+
+    const totalInvested = (investments||[]).reduce((s,i) => s + Number(i.amount), 0);
+
+    const invRows = (investments||[]).map(i => `
+      <div style="background:var(--warm-grey);border-radius:8px;padding:12px 14px;margin-bottom:8px;">
+        <div style="font-weight:600;font-size:13px;color:var(--text);">${esc(i.units?.name) || 'Unknown Unit'}</div>
+        <div style="font-size:12px;color:var(--text-light);margin-top:2px;">${esc(i.units?.location)} · Plan ${esc(i.plan)} · ${fmt(i.amount)}</div>
+        <div style="margin-top:6px;"><span class="badge ${i.status==='active'?'badge-green':'badge-navy'}">${esc(i.status)}</span></div>
+      </div>`).join('') || '<p style="color:var(--text-light);font-size:13px;">No investments yet.</p>';
+
+    showDetail(esc(inv.full_name) || 'Investor', `
+      <div class="detail-row"><label>Full Name</label><span>${esc(inv.full_name) || '—'}</span></div>
+      <div class="detail-row"><label>Email</label><span>${esc(inv.email) || '—'}</span></div>
+      <div class="detail-row"><label>Phone</label><span>${esc(inv.phone) || '—'}</span></div>
+      <div class="detail-row"><label>City</label><span>${esc(inv.city) || '—'}</span></div>
+      <div class="detail-row"><label>Joined</label><span>${fmtDate(inv.created_at)}</span></div>
+      <hr class="detail-divider">
+      <div class="detail-row"><label>Total Invested</label><span style="font-size:18px;font-weight:700;color:var(--gold);">${fmt(totalInvested)}</span></div>
+      <hr class="detail-divider">
+      <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;">Investments</div>
+      ${invRows}
+    `);
+  }
+
+  async function addInvestor() {
+    const name  = document.getElementById('inv-name').value.trim();
+    const email = document.getElementById('inv-email').value.trim();
+    const pass  = document.getElementById('inv-pass').value;
+    const phone = document.getElementById('inv-phone').value.trim();
+    const city  = document.getElementById('inv-city').value.trim();
+    if (!name || !email || !pass) return toast('Name, email & password are required.', 'error');
+    try {
+      await signUp(email, pass, name, phone, city);
+      closeModal('addInvestorModal');
+      toast('Investor account created.');
+      loadInvestors();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  // ── INVESTMENTS ──────────────────────────────
+  async function loadInvestments() {
+    const tbody = document.getElementById('investmentsBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Loading...</td></tr>';
+    try {
+      const data = await adminGetAllInvestments();
+      if (!data.length) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="7">No investments yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(i => `
+        <tr>
+          <td class="td-name">${esc(i.profiles?.full_name) || '—'}</td>
+          <td>${esc(i.units?.name) || '—'}</td>
+          <td><span class="badge badge-gold">Plan ${esc(i.plan)}</span></td>
+          <td class="td-mono">${fmt(i.amount)}</td>
+          <td>${Number(i.units_count)}</td>
+          <td>${fmtDate(i.start_date)}</td>
+          <td><span class="badge ${i.status==='active'?'badge-green':'badge-navy'}">${esc(i.status)}</span></td>
+        </tr>`).join('');
+    } catch(e) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Error loading data.</td></tr>';
+    }
+  }
+
+  async function populateInvestmentDropdowns() {
+    const [invRes, unitRes] = await Promise.all([
+      db.from('profiles').select('id, full_name').eq('is_admin', false),
+      db.from('units').select('id, name').eq('status', 'active')
+    ]);
+    document.getElementById('inv-select').innerHTML =
+      (invRes.data||[]).map(i => `<option value="${esc(i.id)}">${esc(i.full_name)}</option>`).join('');
+    document.getElementById('unit-select').innerHTML =
+      (unitRes.data||[]).map(u => `<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('');
+    document.getElementById('inv-start').value = new Date().toISOString().split('T')[0];
+  }
+
+  async function addInvestment() {
+    const investorId  = document.getElementById('inv-select').value;
+    const unitId      = document.getElementById('unit-select').value;
+    const plan        = document.getElementById('plan-select').value;
+    const amount      = document.getElementById('inv-amount').value;
+    const unitsCount  = document.getElementById('inv-units-count').value;
+    const startDate   = document.getElementById('inv-start').value;
+    if (!investorId || !amount) return toast('Investor and amount are required.', 'error');
+    try {
+      const { error } = await db.from('investments').insert({
+        investor_id: investorId, unit_id: unitId, plan,
+        amount: Number(amount), units_count: Number(unitsCount), start_date: startDate
+      });
+      if (error) throw error;
+      closeModal('addInvestmentModal');
+      toast('Investment saved.');
+      loadInvestments();
+      loadDashboard();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  // ── PAYOUTS ──────────────────────────────────
+  async function loadPayouts() {
+    const tbody = document.getElementById('payoutsBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Loading...</td></tr>';
+    try {
+      const { data, error } = await db
+        .from('payouts')
+        .select('*, investments(amount, plan, investor_id, profiles(full_name), units(name))')
+        .order('year', { ascending: false })
+        .order('quarter', { ascending: false });
+      if (error) throw error;
+      if (!data.length) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="7">No payouts yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(p => `
+        <tr>
+          <td class="td-name">${esc(p.investments?.profiles?.full_name) || '—'}</td>
+          <td>${esc(p.investments?.units?.name) || '—'}</td>
+          <td>Q${Number(p.quarter)}</td>
+          <td>${Number(p.year)}</td>
+          <td class="td-mono">${fmt(p.amount)}</td>
+          <td><span class="badge ${p.status==='paid'?'badge-green':'badge-orange'}">${esc(p.status)}</span></td>
+          <td>
+            ${p.status === 'pending' ? `<button class="btn btn-success btn-sm" onclick="markPaid('${esc(p.id)}')">Mark Paid</button>` : `<span style="font-size:11px;color:var(--text-light);">${fmtDate(p.paid_at)}</span>`}
+          </td>
+        </tr>`).join('');
+    } catch(e) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Error loading data.</td></tr>';
+    }
+  }
+
+  async function populatePayoutDropdowns() {
+    const { data } = await db
+      .from('investments')
+      .select('id, amount, plan, profiles(full_name), units(name)')
+      .eq('status', 'active');
+    document.getElementById('payout-investment-select').innerHTML =
+      (data||[]).map(i => `<option value="${esc(i.id)}">${esc(i.profiles?.full_name)} — ${esc(i.units?.name)} (Plan ${esc(i.plan)})</option>`).join('');
+    document.getElementById('payout-year').value = new Date().getFullYear();
+  }
+
+  async function addPayout() {
+    const investmentId = document.getElementById('payout-investment-select').value;
+    const quarter  = document.getElementById('payout-quarter').value;
+    const year     = document.getElementById('payout-year').value;
+    const amount   = document.getElementById('payout-amount').value;
+    const note     = document.getElementById('payout-note').value;
+    if (!amount) return toast('Amount is required.', 'error');
+    try {
+      await adminAddPayout(investmentId, Number(quarter), Number(year), Number(amount), note);
+      closeModal('addPayoutModal');
+      toast('Payout added.');
+      loadPayouts();
+      loadDashboard();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function markPaid(payoutId) {
+    try {
+      await adminMarkPayoutPaid(payoutId);
+      toast('Marked as paid.');
+      loadPayouts();
+      loadDashboard();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  // ── UNITS ────────────────────────────────────
+  async function loadUnits() {
+    const tbody = document.getElementById('unitsBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Loading...</td></tr>';
+    try {
+      const data = await adminGetUnits();
+      if (!data.length) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="5">No units yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.map(u => `
+        <tr>
+          <td class="td-name">${esc(u.name)}</td>
+          <td>${esc(u.location)}</td>
+          <td><span class="badge ${u.type==='store'?'badge-navy':'badge-gold'}">${esc(u.type)}</span></td>
+          <td class="td-mono">${fmt(u.ebitda_quarterly)}</td>
+          <td><span class="badge ${u.status==='active'?'badge-green':u.status==='upcoming'?'badge-orange':'badge-red'}">${esc(u.status)}</span></td>
+        </tr>`).join('');
+    } catch(e) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Error loading units.</td></tr>';
+    }
+  }
+
+  async function addUnit() {
+    const name     = document.getElementById('unit-name').value.trim();
+    const location = document.getElementById('unit-location').value.trim();
+    const type     = document.getElementById('unit-type').value;
+    const ebitda   = document.getElementById('unit-ebitda').value;
+    const status   = document.getElementById('unit-status').value;
+    if (!name || !location) return toast('Name and location are required.', 'error');
+    try {
+      const { error } = await db.from('units').insert({ name, location, type, ebitda_quarterly: Number(ebitda), status });
+      if (error) throw error;
+      closeModal('addUnitModal');
+      toast('Unit added.');
+      loadUnits();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  // ── CHANNEL PARTNERS ─────────────────────────
+  const cpRankLabel = { channel_partner:'Channel Partner', manager:'Manager', senior_manager:'Sr. Manager', bdo:'BDO' };
+  const cpRankBadge = { channel_partner:'badge-navy', manager:'badge-gold', senior_manager:'badge-orange', bdo:'badge-green' };
+
+  let allCPs = [];
+
+  async function loadChannelPartners() {
+    try {
+      const [cpRes, commRes] = await Promise.all([
+        db.from('channel_partners').select('id', { count: 'exact' }),
+        db.from('cp_commissions').select('commission_amount, status')
+      ]);
+      document.getElementById('cp-total').textContent   = cpRes.count || 0;
+      const c = commRes.data || [];
+      document.getElementById('cp-paid').textContent    = fmt(c.filter(x => x.status==='paid').reduce((s,x) => s+Number(x.commission_amount), 0));
+      document.getElementById('cp-pending').textContent = fmt(c.filter(x => x.status==='pending').reduce((s,x) => s+Number(x.commission_amount), 0));
+    } catch(e) { console.error(e); }
+    await loadCPTable();
+    await loadCPCommissions();
+  }
+
+  async function loadCPTable() {
+    const tbody = document.getElementById('cpBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Loading...</td></tr>';
+    try {
+      allCPs = await adminGetAllCPs();
+      renderCPs(allCPs);
+    } catch(e) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Error loading data.</td></tr>';
+    }
+  }
+
+  function renderCPs(list) {
+    const tbody = document.getElementById('cpBody');
+    if (!list.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="7">No channel partners yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(cp => {
+      const referrer = allCPs.find(c => c.id === cp.referred_by);
+      return `
+        <tr style="cursor:pointer;" onclick="showCPDetail('${esc(cp.id)}')">
+          <td class="td-name">${esc(cp.profiles?.full_name) || '—'}</td>
+          <td class="td-mono">${esc(cp.consultant_id)}</td>
+          <td><span class="badge ${cpRankBadge[cp.rank]||'badge-navy'}">${esc(cpRankLabel[cp.rank]||cp.rank)}</span></td>
+          <td>${referrer ? esc(referrer.profiles?.full_name) : '—'}</td>
+          <td>${fmtDate(cp.joined_at)}</td>
+          <td><span class="badge ${cp.status==='active'?'badge-green':'badge-red'}">${esc(cp.status)}</span></td>
+          <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showCPDetail('${esc(cp.id)}')">View →</button></td>
+        </tr>`;
+    }).join('');
+  }
+
+  function filterCPs(q) {
+    const filtered = allCPs.filter(cp =>
+      (cp.profiles?.full_name||'').toLowerCase().includes(q.toLowerCase()) ||
+      (cp.consultant_id||'').toLowerCase().includes(q.toLowerCase())
+    );
+    renderCPs(filtered);
+  }
+
+  async function showCPDetail(id) {
+    const cp = allCPs.find(c => c.id === id);
+    if (!cp) return;
+    const [l1Res, commRes] = await Promise.all([
+      db.from('channel_partners').select('*, profiles(full_name)').eq('referred_by', id),
+      db.from('cp_commissions').select('*').eq('cp_id', id).order('created_at', { ascending: false }).limit(10)
+    ]);
+    const l1    = l1Res.data || [];
+    const comms = commRes.data || [];
+    const referrer    = allCPs.find(c => c.id === cp.referred_by);
+    const totalEarned = comms.filter(c=>c.status==='paid').reduce((s,c)=>s+Number(c.commission_amount),0);
+    const totalPending= comms.filter(c=>c.status==='pending').reduce((s,c)=>s+Number(c.commission_amount),0);
+
+    const l1Rows = l1.map(l => `
+      <div style="background:var(--warm-grey);border-radius:7px;padding:10px 13px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-weight:600;font-size:13px;">${esc(l.profiles?.full_name)||'—'}</div>
+          <div style="font-size:11px;color:var(--text-light);">${esc(l.consultant_id)}</div>
+        </div>
+        <span class="badge badge-green" style="font-size:10px;">${esc(l.status)}</span>
+      </div>`).join('') || '<p style="font-size:13px;color:var(--text-light);">No L1 referrals yet.</p>';
+
+    const commTypeLabel = { direct:'Direct', l1_passive:'L1 Passive', l2_passive:'L2 Passive' };
+    const commTypeBadge = { direct:'badge-gold', l1_passive:'badge-green', l2_passive:'badge-navy' };
+    const commRows = comms.slice(0,5).map(c => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);">
+        <div>
+          <span class="badge ${commTypeBadge[c.type]||'badge-navy'}" style="font-size:10px;margin-right:6px;">${esc(commTypeLabel[c.type]||c.type)}</span>
+          <span style="font-size:12px;color:var(--text-light);">${esc(c.note)||''}</span>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:600;font-size:13px;">${fmt(c.commission_amount)}</div>
+          <span class="badge ${c.status==='paid'?'badge-green':'badge-orange'}" style="font-size:10px;">${esc(c.status)}</span>
+        </div>
+      </div>`).join('') || '<p style="font-size:13px;color:var(--text-light);">No commissions yet.</p>';
+
+    showDetail(esc(cp.profiles?.full_name)||'Channel Partner', `
+      <div class="detail-row"><label>Full Name</label><span>${esc(cp.profiles?.full_name)||'—'}</span></div>
+      <div class="detail-row"><label>Email</label><span>${esc(cp.profiles?.email)||'—'}</span></div>
+      <div class="detail-row"><label>Phone</label><span>${esc(cp.profiles?.phone)||'—'}</span></div>
+      <div class="detail-row"><label>Consultant ID</label><span style="font-family:monospace;font-size:15px;font-weight:700;color:var(--gold);">${esc(cp.consultant_id)}</span></div>
+      <div class="detail-row"><label>Rank</label><span class="badge ${cpRankBadge[cp.rank]||'badge-navy'}">${esc(cpRankLabel[cp.rank]||cp.rank)}</span></div>
+      <div class="detail-row"><label>Referred By</label><span>${referrer ? esc(referrer.profiles?.full_name) : '—'}</span></div>
+      <div class="detail-row"><label>Joined</label><span>${fmtDate(cp.joined_at)}</span></div>
+      <hr class="detail-divider">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="background:var(--green-pale);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:18px;font-weight:700;color:#1a9e52;">${fmt(totalEarned)}</div>
+          <div style="font-size:11px;color:#1a9e52;margin-top:2px;">Total Earned</div>
+        </div>
+        <div style="background:rgba(232,98,42,0.1);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:18px;font-weight:700;color:var(--orange);">${fmt(totalPending)}</div>
+          <div style="font-size:11px;color:var(--orange);margin-top:2px;">Pending</div>
+        </div>
+      </div>
+      <hr class="detail-divider">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;">L1 Network (${l1.length})</div>
+      ${l1Rows}
+      <hr class="detail-divider">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;">Recent Commissions</div>
+      ${commRows}
+    `);
+  }
+
+  async function loadCPCommissions() {
+    const tbody = document.getElementById('cpCommissionsBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Loading...</td></tr>';
+    try {
+      const { data, error } = await db.from('cp_commissions')
+        .select('*, channel_partners(consultant_id, profiles(full_name))')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      if (!data.length) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="7">No commissions yet.</td></tr>';
+        return;
+      }
+      const commTypeLabel = { direct:'Direct', l1_passive:'L1 Passive', l2_passive:'L2 Passive' };
+      const commTypeBadge = { direct:'badge-gold', l1_passive:'badge-green', l2_passive:'badge-navy' };
+      tbody.innerHTML = data.map(c => `
+        <tr>
+          <td class="td-name">${esc(c.channel_partners?.profiles?.full_name)||'—'}</td>
+          <td><span class="badge ${commTypeBadge[c.type]||'badge-navy'}">${esc(commTypeLabel[c.type]||c.type)}</span></td>
+          <td class="td-mono">${fmt(c.sale_amount)}</td>
+          <td class="td-mono">${fmt(c.commission_amount)}</td>
+          <td><span class="badge ${c.status==='paid'?'badge-green':'badge-orange'}">${esc(c.status)}</span></td>
+          <td>${fmtDate(c.created_at)}</td>
+          <td>${c.status==='pending'
+            ? `<button class="btn btn-success btn-sm" onclick="markCPCommissionPaid('${esc(c.id)}')">Mark Paid</button>`
+            : `<span style="font-size:11px;color:var(--text-light);">${fmtDate(c.paid_at)}</span>`
+          }</td>
+        </tr>`).join('');
+    } catch(e) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Error loading data.</td></tr>';
+    }
+  }
+
+  async function populateCPModals() {
+    const [profilesRes, cpsRes] = await Promise.all([
+      db.from('profiles').select('id, full_name').eq('is_admin', false),
+      db.from('channel_partners').select('id, consultant_id, profiles(full_name)')
+    ]);
+    const existingIds = new Set((cpsRes.data||[]).map(c => c.id));
+    const eligible = (profilesRes.data||[]).filter(p => !existingIds.has(p.id));
+    document.getElementById('cp-profile-select').innerHTML =
+      eligible.length
+        ? eligible.map(p => `<option value="${esc(p.id)}">${esc(p.full_name)}</option>`).join('')
+        : '<option value="">No eligible users — add an investor first</option>';
+    document.getElementById('cp-referrer-select').innerHTML =
+      '<option value="">— None (no referrer) —</option>' +
+      (cpsRes.data||[]).map(c => `<option value="${esc(c.id)}">${esc(c.profiles?.full_name)} (${esc(c.consultant_id)})</option>`).join('');
+  }
+
+  async function populateCPCommissionModal() {
+    const { data } = await db.from('channel_partners').select('id, consultant_id, profiles(full_name)');
+    document.getElementById('cp-comm-cp-select').innerHTML =
+      (data||[]).length
+        ? (data||[]).map(c => `<option value="${esc(c.id)}">${esc(c.profiles?.full_name)} (${esc(c.consultant_id)})</option>`).join('')
+        : '<option>No CPs yet</option>';
+  }
+
+  function suggestCommission() {
+    const type = document.getElementById('cp-comm-type').value;
+    const sale = Number(document.getElementById('cp-comm-sale').value);
+    if (!sale) return;
+    const rates = { direct: 0.035, l1_passive: 0.0075, l2_passive: 0.005 };
+    document.getElementById('cp-comm-amount').value = Math.round(sale * (rates[type] || 0));
+  }
+
+  async function addCP() {
+    const profileId    = document.getElementById('cp-profile-select').value;
+    const consultantId = document.getElementById('cp-consultant-id').value.trim();
+    const referredBy   = document.getElementById('cp-referrer-select').value;
+    const rank         = document.getElementById('cp-rank-select').value;
+    if (!profileId || !consultantId) return toast('User and Consultant ID are required.', 'error');
+    try {
+      await adminAddCP(profileId, consultantId, referredBy || null, rank);
+      closeModal('addCPModal');
+      toast('Channel Partner added.');
+      loadChannelPartners();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function addCPCommission() {
+    const cpId     = document.getElementById('cp-comm-cp-select').value;
+    const type     = document.getElementById('cp-comm-type').value;
+    const sale     = document.getElementById('cp-comm-sale').value;
+    const amount   = document.getElementById('cp-comm-amount').value;
+    const note     = document.getElementById('cp-comm-note').value;
+    if (!cpId || !sale || !amount) return toast('CP, sale amount and commission amount are required.', 'error');
+    try {
+      await adminAddCPCommission(cpId, type, Number(sale), Number(amount), note);
+      closeModal('addCPCommissionModal');
+      toast('Commission added.');
+      loadChannelPartners();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  async function markCPCommissionPaid(id) {
+    try {
+      await adminMarkCPCommissionPaid(id);
+      toast('Commission marked as paid.');
+      loadCPCommissions();
+    } catch(e) { toast(e.message, 'error'); }
+  }
+
+  // ── INVEST LEADS ─────────────────────────────
+  let allLeads = [];
+
+  async function loadLeads() {
+    const tbody = document.getElementById('leadsBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Loading…</td></tr>';
+    try {
+      allLeads = await adminGetLeads();
+      renderLeads(allLeads);
+      const total     = allLeads.length;
+      const newCount  = allLeads.filter(l => l.status === 'new').length;
+      const contacted = allLeads.filter(l => l.status === 'contacted').length;
+      const converted = allLeads.filter(l => l.status === 'converted').length;
+      document.getElementById('leads-total').textContent     = total;
+      document.getElementById('leads-new').textContent       = newCount;
+      document.getElementById('leads-contacted').textContent = contacted;
+      document.getElementById('leads-converted').textContent = converted;
+    } catch(e) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="8">Error loading leads.</td></tr>';
+    }
+  }
+
+  function renderLeads(list) {
+    const tbody = document.getElementById('leadsBody');
+    if (!list.length) {
+      tbody.innerHTML = '<tr class="loading-row"><td colspan="8">No leads yet.</td></tr>';
+      return;
+    }
+    const badgeCls = { new:'badge-orange', contacted:'badge-gold', converted:'badge-green', dropped:'badge-navy' };
+    tbody.innerHTML = list.map(l => `
+      <tr>
+        <td class="td-name">${esc(l.full_name)}</td>
+        <td>${esc(l.phone)}</td>
+        <td>${esc(l.email) || '—'}</td>
+        <td style="font-size:12px;">${esc(l.interest) || '—'}</td>
+        <td>${esc(l.city) || '—'}</td>
+        <td><span class="badge ${badgeCls[l.status] || 'badge-navy'}">${esc(l.status)}</span></td>
+        <td>${fmtDate(l.submitted_at)}</td>
+        <td>
+          <select style="padding:4px 8px;font-size:12px;border:1.5px solid var(--border);border-radius:6px;background:var(--cream);color:var(--text);font-family:'Inter',sans-serif;cursor:pointer;"
+            onchange="setLeadStatus('${esc(l.id)}', this.value)">
+            <option value="new"       ${l.status==='new'       ?'selected':''}>New</option>
+            <option value="contacted" ${l.status==='contacted' ?'selected':''}>Contacted</option>
+            <option value="converted" ${l.status==='converted' ?'selected':''}>Converted</option>
+            <option value="dropped"   ${l.status==='dropped'   ?'selected':''}>Dropped</option>
+          </select>
+        </td>
+      </tr>`).join('');
+  }
+
+  function filterLeads(q) {
+    const lq = q.toLowerCase();
+    renderLeads(allLeads.filter(l =>
+      (l.full_name||'').toLowerCase().includes(lq) ||
+      (l.phone||'').includes(q)
+    ));
+  }
+
+  async function setLeadStatus(id, status) {
+    try {
+      await adminUpdateLeadStatus(id, status);
+      const lead = allLeads.find(l => l.id === id);
+      if (lead) lead.status = status;
+      toast('Lead status updated.');
+      const newCount  = allLeads.filter(l => l.status === 'new').length;
+      const contacted = allLeads.filter(l => l.status === 'contacted').length;
+      const converted = allLeads.filter(l => l.status === 'converted').length;
+      document.getElementById('leads-new').textContent       = newCount;
+      document.getElementById('leads-contacted').textContent = contacted;
+      document.getElementById('leads-converted').textContent = converted;
+    } catch(e) { toast(e.message, 'error'); }
+  }
+</script>
+
+</body>
+</html>
