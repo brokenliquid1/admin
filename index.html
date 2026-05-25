@@ -392,7 +392,7 @@
       <label>Password</label>
       <input type="password" id="loginPassword" placeholder="••••••••">
     </div>
-    <button class="btn-auth" id="loginBtn" onclick="doLogin()">Sign In to Admin Panel</button>
+    <button class="btn-auth" id="loginBtn">Sign In to Admin Panel</button>
     <div id="authError">Incorrect credentials or insufficient permissions.</div>
   </div>
 </div>
@@ -413,25 +413,25 @@
       </div>
     </div>
     <nav class="sidebar-nav">
-      <button class="nav-item active" onclick="switchTab('dashboard', this)">
+      <button class="nav-item active" data-tab="dashboard">
         <span class="nav-icon">📊</span> Dashboard
       </button>
-      <button class="nav-item" onclick="switchTab('investors', this)">
+      <button class="nav-item" data-tab="investors">
         <span class="nav-icon">👥</span> Investors
       </button>
-      <button class="nav-item" onclick="switchTab('investments', this)">
+      <button class="nav-item" data-tab="investments">
         <span class="nav-icon">💼</span> Investments
       </button>
-      <button class="nav-item" onclick="switchTab('payouts', this)">
+      <button class="nav-item" data-tab="payouts">
         <span class="nav-icon">💰</span> Payouts
       </button>
-      <button class="nav-item" onclick="switchTab('units', this)">
+      <button class="nav-item" data-tab="units">
         <span class="nav-icon">🏪</span> Units
       </button>
-      <button class="nav-item" onclick="switchTab('channelpartners', this)">
+      <button class="nav-item" data-tab="channelpartners">
         <span class="nav-icon">🤝</span> Channel Partners
       </button>
-      <button class="nav-item" onclick="switchTab('leads', this)">
+      <button class="nav-item" data-tab="leads">
         <span class="nav-icon">📋</span> Invest Leads
       </button>
     </nav>
@@ -443,7 +443,7 @@
           <div class="admin-role">Administrator</div>
         </div>
       </div>
-      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+      <button class="btn-logout" id="logoutBtn">Sign Out</button>
     </div>
   </aside>
 
@@ -493,7 +493,7 @@
               <div class="card-title">Recent Investments</div>
               <div class="card-subtitle">Latest investor activity</div>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="switchTab('investments', document.querySelector('.nav-item:nth-child(3)'))">View All</button>
+            <button class="btn btn-primary btn-sm" id="viewAllInvestmentsBtn">View All</button>
           </div>
           <table id="recentInvestmentsTable">
             <thead>
@@ -522,8 +522,8 @@
               <div class="card-subtitle">Click a row to view full profile</div>
             </div>
             <div style="display:flex;gap:10px;align-items:center;">
-              <input type="text" class="search-input" placeholder="Search name / phone..." oninput="filterInvestors(this.value)">
-              <button class="btn btn-primary btn-sm" onclick="openModal('addInvestorModal')">+ Add Investor</button>
+              <input type="text" class="search-input" id="investorSearch" placeholder="Search name / phone...">
+              <button class="btn btn-primary btn-sm" id="openAddInvestorBtn">+ Add Investor</button>
             </div>
           </div>
           <table>
@@ -551,7 +551,7 @@
               <div class="card-title">All Investments</div>
               <div class="card-subtitle">Every active and past investment</div>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openModal('addInvestmentModal')">+ Add Investment</button>
+            <button class="btn btn-primary btn-sm" id="openAddInvestmentBtn">+ Add Investment</button>
           </div>
           <table>
             <thead>
@@ -580,7 +580,7 @@
               <div class="card-title">Payouts</div>
               <div class="card-subtitle">Quarterly payouts — add new or mark as paid</div>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openModal('addPayoutModal')">+ Add Payout</button>
+            <button class="btn btn-primary btn-sm" id="openAddPayoutBtn">+ Add Payout</button>
           </div>
           <table>
             <thead>
@@ -609,7 +609,7 @@
               <div class="card-title">Units</div>
               <div class="card-subtitle">Manage kiosks and store locations</div>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openModal('addUnitModal')">+ Add Unit</button>
+            <button class="btn btn-primary btn-sm" id="openAddUnitBtn">+ Add Unit</button>
           </div>
           <table>
             <thead>
@@ -655,8 +655,8 @@
               <div class="card-subtitle">Click a row to view profile and referral network</div>
             </div>
             <div style="display:flex;gap:10px;align-items:center;">
-              <input type="text" class="search-input" placeholder="Search name / ID..." oninput="filterCPs(this.value)">
-              <button class="btn btn-primary btn-sm" onclick="openModal('addCPModal')">+ Add CP</button>
+              <input type="text" class="search-input" id="cpSearch" placeholder="Search name / ID...">
+              <button class="btn btn-primary btn-sm" id="openAddCPBtn">+ Add CP</button>
             </div>
           </div>
           <table>
@@ -683,7 +683,7 @@
               <div class="card-title">CP Commissions</div>
               <div class="card-subtitle">Direct and passive income records — add new or mark paid</div>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openModal('addCPCommissionModal')">+ Add Commission</button>
+            <button class="btn btn-primary btn-sm" id="openAddCPCommissionBtn">+ Add Commission</button>
           </div>
           <table>
             <thead>
@@ -734,7 +734,7 @@
               <div class="card-title">All Investment Enquiries</div>
               <div class="card-subtitle">Submitted via the Invest Now form on the public website</div>
             </div>
-            <input type="text" class="search-input" placeholder="Search name / phone…" oninput="filterLeads(this.value)">
+            <input type="text" class="search-input" id="leadsSearch" placeholder="Search name / phone…">
           </div>
           <table>
             <thead>
@@ -764,7 +764,7 @@
 <div class="detail-panel" id="detailPanel">
   <div class="detail-header">
     <span class="detail-title" id="detailTitle">Investor Profile</span>
-    <button class="modal-close" onclick="closeDetail()">✕</button>
+    <button class="modal-close" id="detailCloseBtn">✕</button>
   </div>
   <div class="detail-body" id="detailBody"></div>
 </div>
@@ -774,7 +774,7 @@
 <!-- Add Investor -->
 <div class="modal-overlay" id="addInvestorModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('addInvestorModal')">✕</button>
+    <button class="modal-close" data-close-modal="addInvestorModal">✕</button>
     <div class="modal-title">Add Investor</div>
     <p class="modal-sub">Creates a new investor account.</p>
     <div class="modal-field"><label>Full Name</label><input type="text" id="inv-name" placeholder="Rahul Mehta"></div>
@@ -783,8 +783,8 @@
     <div class="modal-field"><label>Phone</label><input type="tel" id="inv-phone" placeholder="+91 98765 43210"></div>
     <div class="modal-field"><label>City</label><input type="text" id="inv-city" placeholder="Noida"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('addInvestorModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="addInvestor()">Create Investor</button>
+      <button class="btn btn-ghost" data-close-modal="addInvestorModal">Cancel</button>
+      <button class="btn btn-primary" id="submitAddInvestorBtn">Create Investor</button>
     </div>
   </div>
 </div>
@@ -792,7 +792,7 @@
 <!-- Add Investment -->
 <div class="modal-overlay" id="addInvestmentModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('addInvestmentModal')">✕</button>
+    <button class="modal-close" data-close-modal="addInvestmentModal">✕</button>
     <div class="modal-title">Add Investment</div>
     <p class="modal-sub">Link an investor to a unit with investment details.</p>
     <div class="modal-field"><label>Investor</label><select id="inv-select"></select></div>
@@ -812,8 +812,8 @@
     </div>
     <div class="modal-field"><label>Start Date</label><input type="date" id="inv-start"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('addInvestmentModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="addInvestment()">Save Investment</button>
+      <button class="btn btn-ghost" data-close-modal="addInvestmentModal">Cancel</button>
+      <button class="btn btn-primary" id="submitAddInvestmentBtn">Save Investment</button>
     </div>
   </div>
 </div>
@@ -821,7 +821,7 @@
 <!-- Add Payout -->
 <div class="modal-overlay" id="addPayoutModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('addPayoutModal')">✕</button>
+    <button class="modal-close" data-close-modal="addPayoutModal">✕</button>
     <div class="modal-title">Add Payout</div>
     <p class="modal-sub">Record a quarterly payout for an investment.</p>
     <div class="modal-field"><label>Investment</label><select id="payout-investment-select"></select></div>
@@ -835,8 +835,8 @@
     <div class="modal-field"><label>Amount (₹)</label><input type="number" id="payout-amount" placeholder="137500"></div>
     <div class="modal-field"><label>Note (optional)</label><input type="text" id="payout-note" placeholder="Q1 2025 payout — Noida store"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('addPayoutModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="addPayout()">Save Payout</button>
+      <button class="btn btn-ghost" data-close-modal="addPayoutModal">Cancel</button>
+      <button class="btn btn-primary" id="submitAddPayoutBtn">Save Payout</button>
     </div>
   </div>
 </div>
@@ -844,7 +844,7 @@
 <!-- Add Unit -->
 <div class="modal-overlay" id="addUnitModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('addUnitModal')">✕</button>
+    <button class="modal-close" data-close-modal="addUnitModal">✕</button>
     <div class="modal-title">Add Unit</div>
     <p class="modal-sub">Add a new kiosk or store location.</p>
     <div class="modal-field"><label>Unit Name</label><input type="text" id="unit-name" placeholder="Sector 18 Store"></div>
@@ -861,8 +861,8 @@
       </select>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('addUnitModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="addUnit()">Save Unit</button>
+      <button class="btn btn-ghost" data-close-modal="addUnitModal">Cancel</button>
+      <button class="btn btn-primary" id="submitAddUnitBtn">Save Unit</button>
     </div>
   </div>
 </div>
@@ -870,7 +870,7 @@
 <!-- Add Channel Partner -->
 <div class="modal-overlay" id="addCPModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('addCPModal')">✕</button>
+    <button class="modal-close" data-close-modal="addCPModal">✕</button>
     <div class="modal-title">Add Channel Partner</div>
     <p class="modal-sub">Register an existing user account as a Channel Partner.</p>
     <div class="modal-field"><label>User Account</label><select id="cp-profile-select"></select></div>
@@ -885,8 +885,8 @@
       </select>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('addCPModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="addCP()">Add Channel Partner</button>
+      <button class="btn btn-ghost" data-close-modal="addCPModal">Cancel</button>
+      <button class="btn btn-primary" id="submitAddCPBtn">Add Channel Partner</button>
     </div>
   </div>
 </div>
@@ -894,23 +894,23 @@
 <!-- Add CP Commission -->
 <div class="modal-overlay" id="addCPCommissionModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal('addCPCommissionModal')">✕</button>
+    <button class="modal-close" data-close-modal="addCPCommissionModal">✕</button>
     <div class="modal-title">Add Commission</div>
     <p class="modal-sub">Record a direct or passive commission entry for a CP.</p>
     <div class="modal-field"><label>Channel Partner</label><select id="cp-comm-cp-select"></select></div>
     <div class="modal-field"><label>Type</label>
-      <select id="cp-comm-type" onchange="suggestCommission()">
+      <select id="cp-comm-type">
         <option value="direct">Direct Sale (3–4%)</option>
         <option value="l1_passive">L1 Passive (0.75%)</option>
         <option value="l2_passive">L2 Passive (0.50%)</option>
       </select>
     </div>
-    <div class="modal-field"><label>Sale Amount (₹)</label><input type="number" id="cp-comm-sale" placeholder="1000000" oninput="suggestCommission()"></div>
+    <div class="modal-field"><label>Sale Amount (₹)</label><input type="number" id="cp-comm-sale" placeholder="1000000"></div>
     <div class="modal-field"><label>Commission Amount (₹)</label><input type="number" id="cp-comm-amount" placeholder="auto-calculated"></div>
     <div class="modal-field"><label>Note (optional)</label><input type="text" id="cp-comm-note" placeholder="Unit sale — Sector 18"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal('addCPCommissionModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="addCPCommission()">Save Commission</button>
+      <button class="btn btn-ghost" data-close-modal="addCPCommissionModal">Cancel</button>
+      <button class="btn btn-primary" id="submitAddCPCommissionBtn">Save Commission</button>
     </div>
   </div>
 </div>
@@ -919,9 +919,14 @@
 <div id="toast"></div>
 
 <!-- ═══ JS ═══ -->
+<!-- DOMPurify — sanitises HTML before setting innerHTML (H2 XSS fix) -->
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"
+        integrity="sha384-Z3XMoKOKqBVvdgNr9CdhVpFyJu0YNl6ZExZWMfGdxKSVMN/wOxZolxp8C8mSqhj"
+        crossorigin="anonymous"></script>
 <script src="/config.js"></script>
 <script src="js/supabase.js"></script>
-<script>
+<script src="js/app.js"></script>
+<script>/* intentionally empty — all logic moved to js/app.js (H3 CSP fix) */
   // ── Topbar date ──────────────────────────────
   document.getElementById('todayDate').textContent =
     new Date().toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'long', year:'numeric' });

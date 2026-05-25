@@ -11,7 +11,7 @@ const MIME = {
 };
 
 // Only these paths are allowed — everything else returns 404
-const ALLOWED = new Set(['/', '/index.html', '/js/supabase.js', '/config.js', '/favicon.ico']);
+const ALLOWED = new Set(['/', '/index.html', '/js/supabase.js', '/js/app.js', '/config.js', '/favicon.ico']);
 
 function loadEnv() {
   try {
@@ -55,7 +55,7 @@ const SEC = {
   'Cache-Control':           'no-store',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+    "script-src 'self' https://cdn.jsdelivr.net",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src https://fonts.gstatic.com",
     "img-src 'self' data:",
