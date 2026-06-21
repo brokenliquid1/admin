@@ -55,11 +55,11 @@ const SEC = {
   'Cache-Control':           'no-store',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' https://cdn.jsdelivr.net",
+    "script-src 'self' https://cdn.jsdelivr.net https://static.cloudflareinsights.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src https://fonts.gstatic.com",
     "img-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
